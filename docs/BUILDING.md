@@ -36,6 +36,13 @@ commit the files they produce:
 - `ANDROID_KEY_ALIAS`: release key alias.
 - `ANDROID_KEY_PASSWORD`: release key password.
 
+For this fork, the persistent PKCS12 keystore and an environment file containing
+all four secret values were generated once in the ignored `.release-secrets/`
+directory. Back up `keyguard-release.p12` and `release.env` securely outside the
+repository and this computer. Losing them means future APKs cannot update apps
+signed with this key. Do not share the environment file or put it in an artifact.
+The key is self-signed for Android APK signing; it is unrelated to macOS signing.
+
 The release job decodes the keystore only into the ephemeral runner filesystem.
 It accepts direct base64, upstream's gzip + base64, and an additional base64
 encoding layer. It then detects JKS or PKCS12 and checks that the alias and both
