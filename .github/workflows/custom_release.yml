@@ -43,8 +43,16 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
           umask 077
+          encoded_file="$RUNNER_TEMP/keyguard-release.payload"
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$encoded_file"
+          container_magic=$(od -An -tx1 -N2 "$encoded_file" | tr -d ' \n')
+          if [ "$container_magic" = 1f8b ]; then
+            gzip -dc "$encoded_file" > "$key_file"
+            echo 'Signing secret uses upstream gzip + base64 encoding.'
+          else
+            mv "$encoded_file" "$key_file"
+          fi
           magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
           case "$magic" in
             feedfeed) store_type=JKS ;;
@@ -104,8 +112,15 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
           umask 077
+          encoded_file="$RUNNER_TEMP/keyguard-release.payload"
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$encoded_file"
+          container_magic=$(od -An -tx1 -N2 "$encoded_file" | tr -d ' \n')
+          if [ "$container_magic" = 1f8b ]; then
+            gzip -dc "$encoded_file" > "$key_file"
+          else
+            mv "$encoded_file" "$key_file"
+          fi
           magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
           case "$magic" in
             feedfeed) store_type=JKS ;;
@@ -187,8 +202,15 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
           umask 077
+          encoded_file="$RUNNER_TEMP/keyguard-release.payload"
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$encoded_file"
+          container_magic=$(od -An -tx1 -N2 "$encoded_file" | tr -d ' \n')
+          if [ "$container_magic" = 1f8b ]; then
+            gzip -dc "$encoded_file" > "$key_file"
+          else
+            mv "$encoded_file" "$key_file"
+          fi
           magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
           case "$magic" in
             feedfeed) store_type=JKS ;;
