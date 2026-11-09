@@ -22,9 +22,38 @@ env:
   GRADLE_OPTS: -Dorg.gradle.daemon=false
 
 jobs:
+  signing-check:
+    name: Validate Android signing keystore
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Decode and identify keystore format
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS"
+          umask 077
+          key_file="$RUNNER_TEMP/keyguard-release.keystore"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
+          for candidate in JKS PKCS12; do
+            if keytool -list -keystore "$key_file" -storetype "$candidate" \
+              -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" >/dev/null 2>&1; then
+              echo "Recognized Android signing keystore format: $candidate"
+              exit 0
+            fi
+          done
+          echo 'ANDROID_KEYSTORE_BASE64 does not decode to a readable JKS/PKCS12 keystore, or store password/alias is incorrect.' >&2
+          exit 1
+
   android:
     name: Release Android APK
     runs-on: ubuntu-24.04
+    needs: [signing-check]
     permissions:
       contents: read
     steps:
@@ -52,12 +81,24 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
           umask 077
+          key_file="$RUNNER_TEMP/keyguard-release.keystore"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
+          store_type=
+          for candidate in JKS PKCS12; do
+            if keytool -list -keystore "$key_file" -storetype "$candidate" \
+              -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" >/dev/null 2>&1; then
+              store_type="$candidate"
+              break
+            fi
+          done
+          test -n "$store_type"
           for module in androidApp wearApp; do
-            printf '%s' "$KEYSTORE_B64" | base64 --decode > "$module/keyguard-release.keystore"
+            cp "$key_file" "$module/keyguard-release.keystore"
             {
               printf 'key_alias=%s\n' "$KEY_ALIAS"
               printf 'password_store=%s\n' "$KEY_PASSWORD"
               printf 'password_key=%s\n' "$KEYSTORE_PASSWORD"
+              printf 'store_type=%s\n' "$store_type"
             } > "$module/keyguard-release.properties"
           done
       - name: Build signed Android release APK
@@ -98,6 +139,7 @@ jobs:
   wear:
     name: Release Wear APK
     runs-on: ubuntu-24.04
+    needs: [signing-check]
     permissions:
       contents: read
     steps:
@@ -125,11 +167,23 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
           umask 077
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > wearApp/keyguard-release.keystore
+          key_file="$RUNNER_TEMP/keyguard-release.keystore"
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
+          store_type=
+          for candidate in JKS PKCS12; do
+            if keytool -list -keystore "$key_file" -storetype "$candidate" \
+              -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" >/dev/null 2>&1; then
+              store_type="$candidate"
+              break
+            fi
+          done
+          test -n "$store_type"
+          cp "$key_file" wearApp/keyguard-release.keystore
           {
             printf 'key_alias=%s\n' "$KEY_ALIAS"
             printf 'password_store=%s\n' "$KEY_PASSWORD"
             printf 'password_key=%s\n' "$KEYSTORE_PASSWORD"
+            printf 'store_type=%s\n' "$store_type"
           } > wearApp/keyguard-release.properties
       - name: Build signed Wear release APK
         run: ./gradlew --no-parallel :wearApp:assembleNoneRelease -Pkeyguard.nativeCargo.cargoOffline=true
@@ -169,6 +223,7 @@ jobs:
   macos:
     name: Release macOS ARM64 DMG
     runs-on: macos-15
+    needs: [signing-check]
     permissions:
       contents: read
     steps:
