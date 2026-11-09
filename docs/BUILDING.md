@@ -9,23 +9,21 @@ need Vaultwarden credentials and do not contact a production Vaultwarden.
   runs JVM validation, builds debug Android and Wear APKs, checks the native
   bundles, and rejects Firebase Analytics/Crashlytics in the dependency graph
   or packaged APK. Debug artifacts are retained for 7 days.
-- `Custom release` runs for `v*` tags or manually. It builds signed
-  `:androidApp:assembleNoneRelease` and `:wearApp:assembleNoneRelease` on Linux,
-  then builds the Compose Desktop ARM64 DMG on `macos-15`. All three must pass
-  before a GitHub Release is created.
+- `Custom release` runs for `v*` tags or manually. A short Linux job validates
+  the persistent signing key and passwords first. Android and Wear release APKs
+  build on Linux; the Compose Desktop ARM64 DMG runs on `macos-15` only after
+  both APK jobs pass. All three must pass before a GitHub Release is created.
 
 The macOS artifact is the project's native Compose Desktop DMG. It is currently
 unsigned/not notarized. Gatekeeper may require opening it explicitly or removing
 the quarantine attribute. Developer ID signing and notarization can be added
 later without changing the package task.
 
-The upstream test, native, lint, and integration workflows remain available
-through `workflow_dispatch`. Their branch filters are set to the dedicated
-`codex-manual-only` branch, so they do not run on normal development pushes or
-pull requests. Gradle wrapper validation and the targeted website check remain
-automatic. F-Droid, Homebrew, and Scoop deployment workflows are manual-only,
-so publishing this custom GitHub Release will not start external publishing
-jobs. The old multi-platform upstream release workflow is also manual-only.
+The upstream checks, sync jobs, and release/deployment workflows remain
+available through `workflow_dispatch`. Their branch filters are set to the
+dedicated `codex-manual-only` branch where applicable, so only Custom Linux CI
+runs on normal development pushes or pull requests. Publishing this custom
+GitHub Release does not start external deployment jobs.
 
 ## Required repository secrets
 
@@ -37,8 +35,9 @@ Create these Actions secrets; never commit the files they produce:
 - `ANDROID_KEY_PASSWORD`: release key password.
 
 The release job decodes the keystore only into the ephemeral runner filesystem,
-creates the two module-local properties files, and never uploads signing files.
-The existing Keyguard build logic is used unchanged.
+checks that the alias and both passwords can access the private key, and detects
+JKS or PKCS12 format. It passes that format to Gradle through the module-local
+properties files and never uploads signing files.
 
 Create the keystore once, offline, and keep a backup. Do not run this from CI:
 
@@ -58,8 +57,8 @@ base64 < keyguard-release.keystore | tr -d '\n'
 After the four secrets are configured:
 
 ```bash
-git tag v3.7.0-custom.1
-git push origin v3.7.0-custom.1
+git tag v3.7.1-20261109.2
+git push origin v3.7.1-20261109.2
 ```
 
 The tag starts Linux Android/Wear jobs and one Apple Silicon macOS job. The

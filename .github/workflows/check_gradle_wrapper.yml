@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - 'gradlew*'
       - 'gradle/wrapper/**'
   pull_request:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - 'gradlew*'
       - 'gradle/wrapper/**'

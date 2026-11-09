@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master
+      - codex-manual-only
     paths:
       # Configuration.
       - '.github/update_gpm_passkeys_priv_apps.py'

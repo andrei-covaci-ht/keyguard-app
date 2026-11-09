@@ -75,7 +75,7 @@ private fun SigningConfig.loadKeyguardSigning(project: Project, filePrefix: Stri
     // Keep the existing property names: these map to key/store in this order.
     keyPassword = properties.getProperty("password_store")
     storePassword = properties.getProperty("password_key")
-    storeType = properties.getProperty("store_type")
+    properties.getProperty("store_type")?.let { storeType = it }
     storeFile = project.file("$filePrefix.keystore")
 }
 
