@@ -16,6 +16,7 @@ import com.artemchep.keyguard.billing.hasGooglePlayServices
 import com.artemchep.keyguard.common.PlatformTemporaryArtifactRootRegistry
 import com.artemchep.keyguard.common.TemporaryArtifactRoot
 import com.artemchep.keyguard.common.io.ioUnit
+import com.artemchep.keyguard.common.model.Premium
 import com.artemchep.keyguard.common.service.Files
 import com.artemchep.keyguard.common.service.androidipc.AndroidIpcRegistrationService
 import com.artemchep.keyguard.common.service.androidipc.AndroidIpcRegistrationServiceNone
@@ -222,6 +223,7 @@ class PlatformApplicationModule {
                 getCachePremium = get(),
                 putCachePremium = get(),
                 windowCoroutineScope = get(),
+                withoutPurchase = Premium.INCLUDED,
             )
         }
 

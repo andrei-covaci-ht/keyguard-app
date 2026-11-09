@@ -118,8 +118,6 @@ The screen also lists the other permissions the app holds.
 
 ## Crash reports and source code
 
-On Android, Keyguard sends crash reports through Firebase Crashlytics, only
-after you turn on **Send crash reports**. The desktop apps don't send crash
-reports. The source code is open on
+This build does not send crash reports or usage analytics. The source code is open on
 [GitHub](https://github.com/AChep/keyguard-app), and you can
 [report a vulnerability](/docs/report-vulnerability/) privately.

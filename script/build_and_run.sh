@@ -3,7 +3,6 @@ set -euo pipefail
 
 MODE="${1:-run}"
 APP_NAME="Keyguard"
-BUNDLE_ID="com.artemchep.keyguard.mac"
 SCHEME="Keyguard"
 CONFIGURATION="Debug"
 
@@ -25,7 +24,7 @@ if [ -z "${DEVELOPER_DIR:-}" ]; then
 fi
 
 usage() {
-  echo "usage: $0 [run|--debug|--logs|--telemetry|--verify]" >&2
+  echo "usage: $0 [run|--debug|--logs|--verify]" >&2
 }
 
 kill_existing() {
@@ -84,10 +83,6 @@ case "$MODE" in
   --logs|logs)
     open_app
     /usr/bin/log stream --info --style compact --predicate "process == \"$APP_NAME\""
-    ;;
-  --telemetry|telemetry)
-    open_app
-    /usr/bin/log stream --info --style compact --predicate "subsystem == \"$BUNDLE_ID\""
     ;;
   --verify|verify)
     open_app

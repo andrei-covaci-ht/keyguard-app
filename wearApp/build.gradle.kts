@@ -9,8 +9,6 @@ plugins {
     alias(libs.plugins.kotlin.plugin.compose)
     alias(libs.plugins.kotlin.plugin.parcelize)
     alias(libs.plugins.kotlin.plugin.serialization)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.crashlytics)
     id("keyguard.detekt-custom-rules")
 }
 

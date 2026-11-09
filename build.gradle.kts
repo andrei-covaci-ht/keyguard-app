@@ -24,8 +24,6 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.ksp) apply false
-    alias(libs.plugins.google.services) apply false
-    alias(libs.plugins.crashlytics) apply false
     alias(libs.plugins.sqldelight) apply false
     alias(libs.plugins.buildkonfig) apply false
     alias(libs.plugins.license.check) apply false

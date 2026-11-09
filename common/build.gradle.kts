@@ -379,9 +379,6 @@ kotlin {
             dependencies {
                 implementation(libs.yubico.yubikit.fido.ui)
                 api(project(":androidLibAutofill"))
-                api(project.dependencies.platform(libs.firebase.bom.get()))
-                api(libs.firebase.analytics)
-                api(libs.firebase.crashlytics)
                 api(libs.achep.bindin)
                 api(libs.androidx.activity.compose)
                 api(libs.androidx.appcompat)

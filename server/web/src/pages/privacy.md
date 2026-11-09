@@ -77,11 +77,9 @@ Visiting the purchase page loads Paddle and its supporting services to preview p
 
 Hosting providers process network and request data, including IP addresses and operational logs, to operate and secure the website and license service. This processing serves the legitimate interest of maintaining reliable, secure services. Logs follow the configured hosting retention settings.
 
-### Optional Crash Data
+### Crash Data
 
-Some Keyguard distributions include optional crash reporting through Google Firebase Crashlytics. Crash reporting is off until you enable it. When enabled, Firebase may receive crash traces, relevant application state and diagnostic logs, application and device information, and identifiers generated for crash reporting. This information is used with your consent to diagnose errors.
-
-You can disable crash reporting in Keyguard's settings. [Firebase states](https://firebase.google.com/support/privacy) that Crashlytics retains crash information and associated identifiers for 90 days before beginning removal from live and backup systems. The operator does not keep a separate server-side copy. An operating system or app store may collect diagnostics independently under its own privacy policy.
+This build does not include crash reporting or usage analytics. An operating system or app store may collect diagnostics independently under its own privacy policy.
 
 ### Communications Data
 
@@ -91,7 +89,7 @@ Messages may be retained indefinitely. You may contact the operator about a mess
 
 ## Service Providers and Disclosures
 
-Google Firebase and Google Cloud process License Data and optional Crash Data to provide hosting, validation, security, and crash-reporting functions for the operator. The [Firebase Data Processing and Security Terms](https://firebase.google.com/terms/data-processing-terms) apply to this processing.
+License validation is not used to gate local vault editing in this build. External Bitwarden servers and app stores remain subject to their own privacy policies.
 
 The operator may disclose personal information to service providers acting on the operator's instructions, when required by law or a valid legal request, to protect Keyguard and its users from fraud or security threats, or to establish, exercise, or defend legal claims.
 

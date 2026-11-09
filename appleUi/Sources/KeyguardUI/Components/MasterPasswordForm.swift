@@ -26,8 +26,6 @@ struct MasterPasswordForm<Content: View>: View {
                     MasterPasswordActions(
                         setPassword: { text in perform { $0.setPassword(text: text) } },
                         setBiometric: { enabled in perform { $0.setBiometric(enabled: enabled) } },
-                        setCrashlytics: { enabled in perform { $0.setCrashlytics(enabled: enabled) }
-                        },
                         submit: { perform { $0.submit() } }
                     ))
             } else {

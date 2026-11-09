@@ -112,9 +112,6 @@ class AndroidConventionsTest {
                 check(applicationVariants.size == 4)
                 applicationVariants.forEach { variant ->
                     val flavor = variant.productFlavors.single { it.first == "accountManagement" }.second
-                    val analytics = checkNotNull(variant.buildConfigFields).get().getValue("ANALYTICS")
-                    check(analytics.type == "boolean")
-                    check(analytics.value == (flavor == "playStore").toString())
                 }
                 val debugSigning = android.signingConfigs.getByName("debug")
                 check(debugSigning.storeFile == file("keyguard-qa.keystore"))

@@ -87,18 +87,15 @@ coil3 = "3.6.3"
 # https://github.com/NucleusFramework/ComposeNativeTray
 composeNativeTray = "2.1.6"
 conscrypt = "2.6.1"
-crashlyticsPlugin = "3.0.7"
 dbusJava = "5.2.0"
 # https://github.com/gmethvin/directory-watcher
 directoryWatcher = "0.19.1"
 # https://github.com/diglol/crypto
 diglolCrypto = "0.2.0"
-firebase = "34.16.0"
 # https://github.com/ionspin/kotlin-multiplatform-bignum
 ionspinBignum = "0.3.10"
 # https://github.com/tfcporciuncula/flow-preferences
 flowPreferences = "1.9.1"
-googleServicesPlugin = "4.5.0"
 # https://github.com/ch4rl3x/HtmlText
 htmlText = "3.0.0-beta02"
 # https://chrisbanes.github.io/haze/latest/
@@ -295,9 +292,6 @@ detekt-test-utils = { module = "dev.detekt:detekt-test-utils", version.ref = "de
 diglol-crypto-kdf = { module = "com.diglol.crypto:kdf", version.ref = "diglolCrypto" }
 directory-watcher = { module = "io.methvin:directory-watcher", version.ref = "directoryWatcher" }
 ionspin-bignum = { module = "com.ionspin.kotlin:bignum", version.ref = "ionspinBignum" }
-firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
-firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase" }
-firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 fredporciuncula-flow-preferences = { module = "com.fredporciuncula:flow-preferences", version.ref = "flowPreferences" }
 google-accompanist-drawablepainter = { module = "com.google.accompanist:accompanist-drawablepainter", version.ref = "accompanist" }
 google-play-services-wearable = { module = "com.google.android.gms:play-services-wearable", version.ref = "playServicesWearable" }
@@ -387,9 +381,7 @@ android-test = { id = "com.android.test", version.ref = "androidPlugin" }
 baseline-profile = { id = "androidx.baselineprofile", version.ref = "androidxBaselineProfile" }
 buildkonfig = { id = "com.codingfeline.buildkonfig", version.ref = "buildkonfigPlugin" }
 compose = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlyticsPlugin" }
 detekt = { id = "dev.detekt", version.ref = "detekt" }
-google-services = { id = "com.google.gms.google-services", version.ref = "googleServicesPlugin" }
 koin-compiler = { id = "io.insert-koin.compiler.plugin", version.ref = "koinCompiler" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

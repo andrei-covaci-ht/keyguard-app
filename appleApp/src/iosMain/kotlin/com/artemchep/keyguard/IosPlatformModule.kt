@@ -6,6 +6,7 @@ import com.artemchep.keyguard.apple.billing.SubscriptionServiceApple
 import com.artemchep.keyguard.apple.billing.appleIsFreeDistribution
 import com.artemchep.keyguard.apple.billing.appleStorePurchased
 import com.artemchep.keyguard.common.io.ioUnit
+import com.artemchep.keyguard.common.model.Premium
 import com.artemchep.keyguard.common.service.androidipc.AndroidIpcRegistrationService
 import com.artemchep.keyguard.common.service.androidipc.AndroidIpcRegistrationServiceNone
 import com.artemchep.keyguard.common.service.autofill.AutofillService
@@ -283,6 +284,7 @@ internal class IosPlatformModule {
                 getCachePremium = get(),
                 putCachePremium = get(),
                 windowCoroutineScope = get(),
+                withoutPurchase = Premium.INCLUDED,
             )
         }
         single<NumberFormatter> {

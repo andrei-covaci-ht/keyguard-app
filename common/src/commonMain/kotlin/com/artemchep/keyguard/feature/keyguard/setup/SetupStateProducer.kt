@@ -15,7 +15,6 @@ import com.artemchep.keyguard.common.model.BiometricAuthPrompt
 import com.artemchep.keyguard.common.model.Loadable
 import com.artemchep.keyguard.common.model.VaultState
 import com.artemchep.keyguard.common.util.flow.EventFlow
-import com.artemchep.keyguard.feature.auth.common.SwitchFieldModel
 import com.artemchep.keyguard.feature.auth.common.TextFieldModel
 import com.artemchep.keyguard.feature.auth.common.textFieldHandle
 import com.artemchep.keyguard.feature.auth.common.Validated
@@ -25,8 +24,6 @@ import com.artemchep.keyguard.feature.localization.TextHolder
 import com.artemchep.keyguard.feature.navigation.state.RememberStateFlowScope
 import com.artemchep.keyguard.feature.navigation.state.produceScreenState
 import com.artemchep.keyguard.platform.LeBiometricCipher
-import com.artemchep.keyguard.platform.crashlyticsIsEnabled
-import com.artemchep.keyguard.platform.crashlyticsSetEnabled
 import com.artemchep.keyguard.res.Res
 import com.artemchep.keyguard.res.*
 import kotlinx.coroutines.awaitCancellation
@@ -41,7 +38,6 @@ import kotlinx.coroutines.sync.withLock
 
 private const val DEFAULT_PASSWORD = ""
 private const val DEFAULT_BIOMETRIC = false
-private const val DEFAULT_CRASHLYTICS = false
 
 @Composable
 fun setupScreenState(
@@ -70,11 +66,6 @@ suspend fun RememberStateFlowScope.setupStateProducer(
     val biometricPromptSink = EventFlow<BiometricAuthPrompt>()
 
     val biometricSink = mutablePersistedFlow("biometric") { DEFAULT_BIOMETRIC }
-    val crashlyticsSink = mutablePersistedFlow("crashlytics") {
-        crashlyticsIsEnabled()
-            ?: DEFAULT_CRASHLYTICS
-    }
-
     val passwordHandle = textFieldHandle("password", initial = DEFAULT_PASSWORD)
 
     // Clear the password field when the screen
@@ -106,10 +97,9 @@ suspend fun RememberStateFlowScope.setupStateProducer(
     return combine(
         passwordHandle.sink
             .map { cell -> cell to validateMasterPassword(cell.text) },
-        crashlyticsSink,
         biometricStateFlow,
         executor.isExecutingFlow,
-    ) { (passwordCell, validatedPassword), crashlytics, biometric, taskIsExecuting ->
+    ) { (passwordCell, validatedPassword), biometric, taskIsExecuting ->
         val validationError = (validatedPassword as? Validated.Failure)?.error
         val canCreateVault = validationError == null && !taskIsExecuting
         val state = SetupState(
@@ -118,10 +108,6 @@ suspend fun RememberStateFlowScope.setupStateProducer(
                 cell = passwordCell,
                 handle = passwordHandle,
                 validated = validatedPassword,
-            ),
-            crashlytics = SwitchFieldModel(
-                checked = crashlytics,
-                onChange = crashlyticsSink::value::set,
             ),
             sideEffects = SetupState.SideEffects(
                 showBiometricPromptFlow = biometricPromptSink,
@@ -156,7 +142,6 @@ suspend fun RememberStateFlowScope.setupStateProducer(
                                         executor = executor,
                                         createVaultWithMasterPasswordAndBiometricFn = createVaultWithMasterPasswordAndBiometricFn,
                                         password = currentPassword.model,
-                                        crashlytics = crashlytics,
                                     )
                                 }.also {
                                     promptWrapper = it.some()
@@ -174,7 +159,7 @@ suspend fun RememberStateFlowScope.setupStateProducer(
                         screenScope.launch {
                             val currentPassword = validateMasterPassword(password)
                             if (currentPassword is Validated.Success) {
-                                createVaultByMasterPasswordFn(currentPassword.model, crashlytics)
+                                createVaultByMasterPasswordFn(currentPassword.model)
                             }
                         }
                     }
@@ -191,9 +176,8 @@ private suspend fun createPromptOrNull(
     executor: LoadingTask,
     createVaultWithMasterPasswordAndBiometricFn: CreateVaultWithBiometric,
     password: String,
-    crashlytics: Boolean,
 ): BiometricAuthPrompt? = run {
-    val createVault = { createVaultWithMasterPasswordAndBiometricFn(password, crashlytics) }
+    val createVault = { createVaultWithMasterPasswordAndBiometricFn(password) }
     // Creating a cipher may fail with:
     // Fatal Exception:
     //     java.security.ProviderException
@@ -238,9 +222,8 @@ private open class CreateVaultWithPassword(
         getCreateIo = options.getCreateIo,
     )
 
-    operator fun invoke(password: String, crashlytics: Boolean) {
+    operator fun invoke(password: String) {
         val io = ioEffect {
-            crashlyticsSetEnabled(crashlytics)
             getCreateIo(password).bind()
         }
         executor.execute(io, password)

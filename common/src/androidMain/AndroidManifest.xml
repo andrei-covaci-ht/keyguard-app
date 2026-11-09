@@ -413,14 +413,5 @@
             android:foregroundServiceType="dataSync"
             tools:node="merge" />
 
-        <!-- Analytics opt-out by default -->
-        <meta-data
-            android:name="firebase_analytics_collection_enabled"
-            android:value="false" />
-
-        <!-- Crashlytics opt-out by default -->
-        <meta-data
-            android:name="firebase_crashlytics_collection_enabled"
-            android:value="false" />
     </application>
 </manifest>

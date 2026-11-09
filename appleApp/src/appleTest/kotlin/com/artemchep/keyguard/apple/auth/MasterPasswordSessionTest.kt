@@ -19,9 +19,8 @@ class MasterPasswordSessionTest {
         second.publish(MasterPasswordSnapshot.empty.copy(password = "second"), actions("B", calls))
         first.session.setPassword("edited")
         second.session.setBiometric(true)
-        first.session.setCrashlytics(false)
         second.session.submit()
-        assertEquals(listOf("A:password:edited", "B:biometric:true", "A:crashlytics:false", "B:submit"), calls)
+        assertEquals(listOf("A:password:edited", "B:biometric:true", "B:submit"), calls)
         assertEquals("first", firstFrames.last().password)
         assertEquals("second", secondFrames.last().password)
 
@@ -31,7 +30,7 @@ class MasterPasswordSessionTest {
         second.session.setPassword("still open")
         assertEquals(1, firstFrames.size)
         assertEquals("B:password:still open", calls.last())
-        assertEquals(5, calls.size)
+        assertEquals(4, calls.size)
         assertEquals(1, first.cancellations)
         assertEquals(0, second.cancellations)
         second.session.close()
@@ -74,14 +73,12 @@ class MasterPasswordSessionTest {
     private fun invokeAll(session: MasterPasswordSession) {
         session.setPassword("late")
         session.setBiometric(true)
-        session.setCrashlytics(true)
         session.submit()
     }
 
     private fun actions(owner: String, calls: MutableList<String>) = MasterPasswordActions(
         setPassword = { calls += "$owner:password:$it" },
         setBiometric = { calls += "$owner:biometric:$it" },
-        setCrashlytics = { calls += "$owner:crashlytics:$it" },
         submit = { calls += "$owner:submit" },
     )
 

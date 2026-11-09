@@ -325,7 +325,6 @@ internal class AuthController(
                         form.toMasterPasswordSnapshot(busy) to MasterPasswordActions(
                             setPassword = form?.password?.onChange,
                             setBiometric = form?.biometric?.onChange,
-                            setCrashlytics = form?.crashlytics?.onChange,
                             submit = { perform(form?.onCreateVault) },
                         )
                     }.collectOnMain { (snapshot, actions) -> publish(snapshot, actions) }

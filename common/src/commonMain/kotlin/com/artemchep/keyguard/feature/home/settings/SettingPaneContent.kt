@@ -56,7 +56,6 @@ import com.artemchep.keyguard.feature.home.settings.component.settingColorScheme
 import com.artemchep.keyguard.feature.home.settings.component.settingConcealFieldsProvider
 import com.artemchep.keyguard.feature.home.settings.component.settingConnectedAppsProvider
 import com.artemchep.keyguard.feature.home.settings.component.settingCrashProvider
-import com.artemchep.keyguard.feature.home.settings.component.settingCrashlyticsProvider
 import com.artemchep.keyguard.feature.home.settings.component.settingCredentialProviderProvider
 import com.artemchep.keyguard.feature.home.settings.component.settingDataSafetyProvider
 import com.artemchep.keyguard.feature.home.settings.component.settingEmitMessageProvider
@@ -225,7 +224,6 @@ object Setting {
     const val CLIPBOARD_AUTO_REFRESH = "clipboard_auto_refresh"
     const val CLIPBOARD_NOTIFICATION_SETTINGS = "clipboard_notification_settings"
     const val CRASH = "test_crash_reports"
-    const val CRASHLYTICS = "automatic_crash_reports"
     const val REQUIRE_MASTER_PASSWORD = "require_master_password"
     const val EMIT_MESSAGE = "emit_message"
     const val EMIT_TOTP = "emit_totp"
@@ -381,7 +379,6 @@ val hub = mapOf<String, (Scope) -> SettingComponent>(
     Setting.CLIPBOARD_AUTO_REFRESH to ::settingClipboardAutoRefreshProvider,
     Setting.CLIPBOARD_NOTIFICATION_SETTINGS to ::settingClipboardNotificationSettingsProvider,
     Setting.CRASH to ::settingCrashProvider,
-    Setting.CRASHLYTICS to ::settingCrashlyticsProvider,
     Setting.REQUIRE_MASTER_PASSWORD to ::settingRequireMasterPasswordProvider,
     Setting.EMIT_MESSAGE to ::settingEmitMessageProvider,
     Setting.EMIT_TOTP to ::settingEmitTotpProvider,

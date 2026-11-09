@@ -3,14 +3,11 @@ package com.artemchep.keyguard.platform
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
-import kotlin.test.assertNull
+import kotlin.test.assertFalse
 
 /**
- * The Crashlytics actuals run on a classpath where `Firebase.crashlytics`
- * throws — `FirebaseApp.getInstance` reaches the unmocked `android.os.Process`
- * — which is the same shape as a build with no `google-services` backend. Every
- * one of them has to answer anyway: they are called from recovery paths that
- * have already turned a throwable into a value.
+ * The privacy build has no remote crash reporter. These calls remain safe no-ops
+ * because they are used from recovery paths that have already handled an error.
  */
 class RecordExceptionTest {
     @Test
@@ -24,13 +21,13 @@ class RecordExceptionTest {
     }
 
     @Test
-    fun `crashlyticsIsEnabled degrades to unknown`() {
-        assertNull(crashlyticsIsEnabled())
+    fun `crashlyticsIsEnabled is always disabled`() {
+        assertFalse(crashlyticsIsEnabled() == true)
     }
 
     @Test
-    fun `crashlyticsIsEnabledFlow degrades to unknown`() = runTest {
-        assertNull(crashlyticsIsEnabledFlow().first())
+    fun `crashlyticsIsEnabledFlow is always disabled`() = runTest {
+        assertFalse(crashlyticsIsEnabledFlow().first() == true)
     }
 
     @Test

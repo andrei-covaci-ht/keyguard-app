@@ -31,10 +31,6 @@ struct MasterPasswordContent: View {
         Binding(get: { snapshot.biometricEnabled }, set: actions.setBiometric)
     }
 
-    private var crashlyticsBinding: Binding<Bool> {
-        Binding(get: { snapshot.crashlyticsEnabled }, set: actions.setCrashlytics)
-    }
-
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
@@ -70,8 +66,6 @@ struct MasterPasswordContent: View {
                                 )
                                 .disabled(isBusy)
                             }
-                            Toggle(L10n.setupButtonSendCrashReports, isOn: crashlyticsBinding)
-                                .disabled(isBusy)
                         }
                     }
                     .frame(maxWidth: 320)

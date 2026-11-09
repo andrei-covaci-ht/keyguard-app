@@ -1,0 +1,239 @@
+name: Custom release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing tag to build and release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+
+jobs:
+  android:
+    name: Release Android APK
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup_gradle
+      - uses: ./.github/actions/setup_android_ndk
+      - uses: ./.github/actions/setup_rust
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          cache-key: android
+      - uses: ./.github/actions/prefetch_native
+        with:
+          profile: android
+      - name: Prepare persistent Android signing files
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
+          umask 077
+          for module in androidApp wearApp; do
+            printf '%s' "$KEYSTORE_B64" | base64 --decode > "$module/keyguard-release.keystore"
+            {
+              printf 'key_alias=%s\n' "$KEY_ALIAS"
+              printf 'password_store=%s\n' "$KEY_PASSWORD"
+              printf 'password_key=%s\n' "$KEYSTORE_PASSWORD"
+            } > "$module/keyguard-release.properties"
+          done
+      - name: Build signed Android release APK
+        run: ./gradlew --no-parallel :androidApp:assembleNoneRelease -Pkeyguard.nativeCargo.cargoOffline=true
+      - name: Verify Android package and telemetry graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=androidApp/build/outputs/apk/none/release/*.apk
+          python3 scripts/verify_native_bundle.py android $apk
+          ./gradlew --no-parallel :androidApp:dependencies --configuration noneReleaseRuntimeClasspath > "$RUNNER_TEMP/android-dependencies.txt"
+          if grep -Eqi 'firebase-(analytics|crashlytics)|com\.google\.firebase:firebase-(analytics|crashlytics)' "$RUNNER_TEMP/android-dependencies.txt"; then
+            echo 'Firebase Analytics/Crashlytics found in the Android runtime dependency graph.' >&2
+            exit 1
+          fi
+          dex_names=$(unzip -Z1 "$apk" | grep -E '^classes([0-9]+)?\.dex$')
+          if while read -r dex; do unzip -p "$apk" "$dex" | strings; done <<< "$dex_names" \
+            | grep -Eqi 'firebase/(analytics|crashlytics)|firebase-analytics|firebase-crashlytics'; then
+            echo 'Firebase Analytics/Crashlytics found in the Android APK.' >&2
+            exit 1
+          fi
+      - name: Name Android artifact
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          cp androidApp/build/outputs/apk/none/release/*.apk "$RUNNER_TEMP/release-assets/Keyguard-Android-${version}.apk"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: release-android
+          path: ${{ runner.temp }}/release-assets/Keyguard-Android-*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  wear:
+    name: Release Wear APK
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup_gradle
+      - uses: ./.github/actions/setup_android_ndk
+      - uses: ./.github/actions/setup_rust
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          cache-key: android
+      - uses: ./.github/actions/prefetch_native
+        with:
+          profile: android
+      - name: Prepare persistent Wear signing files
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > wearApp/keyguard-release.keystore
+          {
+            printf 'key_alias=%s\n' "$KEY_ALIAS"
+            printf 'password_store=%s\n' "$KEY_PASSWORD"
+            printf 'password_key=%s\n' "$KEYSTORE_PASSWORD"
+          } > wearApp/keyguard-release.properties
+      - name: Build signed Wear release APK
+        run: ./gradlew --no-parallel :wearApp:assembleNoneRelease -Pkeyguard.nativeCargo.cargoOffline=true
+      - name: Verify Wear package and telemetry graph
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=wearApp/build/outputs/apk/none/release/*.apk
+          python3 scripts/verify_native_bundle.py android $apk
+          ./gradlew --no-parallel :wearApp:dependencies --configuration noneReleaseRuntimeClasspath > "$RUNNER_TEMP/wear-dependencies.txt"
+          if grep -Eqi 'firebase-(analytics|crashlytics)|com\.google\.firebase:firebase-(analytics|crashlytics)' "$RUNNER_TEMP/wear-dependencies.txt"; then
+            echo 'Firebase Analytics/Crashlytics found in the Wear runtime dependency graph.' >&2
+            exit 1
+          fi
+          dex_names=$(unzip -Z1 "$apk" | grep -E '^classes([0-9]+)?\.dex$')
+          if while read -r dex; do unzip -p "$apk" "$dex" | strings; done <<< "$dex_names" \
+            | grep -Eqi 'firebase/(analytics|crashlytics)|firebase-analytics|firebase-crashlytics'; then
+            echo 'Firebase Analytics/Crashlytics found in the Wear APK.' >&2
+            exit 1
+          fi
+      - name: Name Wear artifact
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${RELEASE_TAG#v}"
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          cp wearApp/build/outputs/apk/none/release/*.apk "$RUNNER_TEMP/release-assets/Keyguard-Wear-${version}.apk"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: release-wear
+          path: ${{ runner.temp }}/release-assets/Keyguard-Wear-*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  macos:
+    name: Release macOS ARM64 DMG
+    runs-on: macos-15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup_gradle
+      - uses: ./.github/actions/setup_rust
+        with:
+          targets: aarch64-apple-darwin
+          cache-key: desktop
+      - uses: ./.github/actions/prefetch_native
+        with:
+          profile: desktop
+      - name: Build unsigned Apple Silicon DMG
+        run: |
+          ./gradlew --no-parallel :desktopApp:createReleaseDistributable -Pkeyguard.nativeCargo.cargoOffline=true
+          ./gradlew --no-parallel :desktopApp:packageReleaseDmg -x :desktopApp:createReleaseDistributable -Pkeyguard.nativeCargo.cargoOffline=true
+      - name: Verify and name DMG
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          dmgs=(desktopApp/build/compose/binaries/main-release/dmg/*.dmg)
+          test "${#dmgs[@]}" -eq 1
+          mount_point="$RUNNER_TEMP/keyguard-dmg"
+          mkdir -p "$mount_point"
+          mounted=false
+          cleanup() {
+            if $mounted; then hdiutil detach "$mount_point"; fi
+          }
+          trap cleanup EXIT
+          hdiutil attach "${dmgs[0]}" -nobrowse -readonly -mountpoint "$mount_point"
+          mounted=true
+          python3 scripts/verify_native_bundle.py desktop "$mount_point" --platform macos --arch aarch64
+          version="${RELEASE_TAG#v}"
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          cp "${dmgs[0]}" "$RUNNER_TEMP/release-assets/Keyguard-macOS-arm64-${version}.dmg"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: release-macos-arm64
+          path: ${{ runner.temp }}/release-assets/Keyguard-macOS-arm64-*.dmg
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub Release
+    runs-on: ubuntu-slim
+    needs: [android, wear, macos]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4.3.0
+        with:
+          pattern: release-*
+          path: release-assets
+          merge-multiple: true
+      - name: Create checksums
+        working-directory: release-assets
+        run: sha256sum Keyguard-*.apk Keyguard-*.dmg > SHA256SUMS
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+        run: gh release create "$RELEASE_TAG" release-assets/* --title "$RELEASE_TAG" --generate-notes

@@ -1,0 +1,76 @@
+name: Custom Linux CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+
+jobs:
+  android-wear:
+    name: Android and Wear validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup_gradle
+      - uses: ./.github/actions/setup_android_ndk
+      - uses: ./.github/actions/setup_rust
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+          cache-key: android
+      - uses: ./.github/actions/prefetch_native
+        with:
+          profile: android
+      - name: Compile and run JVM validation
+        run: ./gradlew --no-parallel :desktopApp:jvmTest
+      - name: Build phone debug APK
+        run: ./gradlew --no-parallel :androidApp:assembleNoneDebug -Pkeyguard.nativeCargo.cargoOffline=true
+      - name: Build Wear debug APK
+        run: ./gradlew --no-parallel :wearApp:assembleNoneDebug -Pkeyguard.nativeCargo.cargoOffline=true
+      - name: Verify native bundles and absence of Firebase telemetry
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/verify_native_bundle.py android \
+            androidApp/build/outputs/apk/none/debug/*.apk \
+            wearApp/build/outputs/apk/none/debug/*.apk
+          ./gradlew --no-parallel \
+            :androidApp:dependencies --configuration noneDebugRuntimeClasspath \
+            > "$RUNNER_TEMP/android-dependencies.txt"
+          ./gradlew --no-parallel \
+            :wearApp:dependencies --configuration noneDebugRuntimeClasspath \
+            > "$RUNNER_TEMP/wear-dependencies.txt"
+          if grep -Eqi 'firebase-(analytics|crashlytics)|com\.google\.firebase:firebase-(analytics|crashlytics)' \
+            "$RUNNER_TEMP/android-dependencies.txt" "$RUNNER_TEMP/wear-dependencies.txt"; then
+            echo 'Firebase Analytics/Crashlytics found in the runtime dependency graph.' >&2
+            exit 1
+          fi
+          for apk in androidApp/build/outputs/apk/none/debug/*.apk wearApp/build/outputs/apk/none/debug/*.apk; do
+            dex_names=$(unzip -Z1 "$apk" | grep -E '^classes([0-9]+)?\.dex$')
+            if while read -r dex; do unzip -p "$apk" "$dex" | strings; done <<< "$dex_names" \
+              | grep -Eqi 'firebase/(analytics|crashlytics)|firebase-analytics|firebase-crashlytics'; then
+              echo "Firebase Analytics/Crashlytics found in $apk." >&2
+              exit 1
+            fi
+          done
+      - name: Upload Android and Wear debug APKs
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: android-wear-debug-apks
+          path: |
+            androidApp/build/outputs/apk/none/debug/*.apk
+            wearApp/build/outputs/apk/none/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7

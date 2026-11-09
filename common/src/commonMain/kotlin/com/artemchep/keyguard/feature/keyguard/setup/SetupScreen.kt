@@ -227,29 +227,6 @@ fun ColumnScope.SetupContent(
             enabled = updatedBiometric.onChange != null,
         )
     }
-    Spacer(Modifier.height(3.dp))
-    val updatedCrashlytics by rememberUpdatedState(setupState.crashlytics)
-    FlatItemLayoutExpressive(
-        shapeState = ShapeState.END,
-        padding = PaddingValues(0.dp),
-        leading = {
-            Checkbox(
-                checked = setupState.crashlytics.checked,
-                onCheckedChange = null,
-            )
-        },
-        content = {
-            Text(
-                text = stringResource(Res.string.setup_button_send_crash_reports),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        },
-        onClick = {
-            val newValue = !updatedCrashlytics.checked
-            updatedCrashlytics.onChange?.invoke(newValue)
-        },
-        enabled = updatedCrashlytics.onChange != null,
-    )
     Spacer(Modifier.height(24.dp))
     val onCreateButtonClick by rememberUpdatedState(setupState.onCreateVault)
     Button(

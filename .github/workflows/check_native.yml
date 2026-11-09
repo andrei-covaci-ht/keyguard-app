@@ -404,7 +404,8 @@ jobs:
   desktop-bundle:
     name: "Native desktop (${{ matrix.name }})"
     needs: changes
-    if: needs.changes.outputs.desktop_run == 'true'
+    # Keep desktop packaging, including macOS, out of ordinary push/PR CI.
+    if: github.event_name == 'workflow_dispatch' && needs.changes.outputs.desktop_run == 'true'
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ matrix.platform == 'macos' && 240 || 90 }}
     strategy:

@@ -2,25 +2,7 @@ name: "✔️ Check Swift Format"
 
 on:
   workflow_dispatch:
-  # Only Swift sources and the formatter configuration.
-  push:
-    branches:
-      - master
-    paths:
-      - '**/*.swift'
-      - '**/.swift-format-ignore'
-      - '.swift-format'
-      - '.github/workflows/check_swift_format.yml'
-      - 'xcode/scripts/lint-swift.sh'
-  pull_request:
-    branches:
-      - master
-    paths:
-      - '**/*.swift'
-      - '**/.swift-format-ignore'
-      - '.swift-format'
-      - '.github/workflows/check_swift_format.yml'
-      - 'xcode/scripts/lint-swift.sh'
+  # macOS is intentionally manual-only to avoid consuming paid runner minutes.
 
 permissions:
   contents: read

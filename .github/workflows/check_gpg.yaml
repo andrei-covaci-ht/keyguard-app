@@ -115,6 +115,8 @@ jobs:
         run: cargo test --manifest-path desktopGpgAgent/src/Cargo.toml
 
   gpg-e2e-tests:
+    # This matrix includes macOS; run it manually to preserve the Linux-only CI budget.
+    if: github.event_name == 'workflow_dispatch'
     name: "End-to-end (${{ matrix.os }})"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60

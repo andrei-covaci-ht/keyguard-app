@@ -15,8 +15,6 @@ class MasterPasswordSession internal constructor(
 
     fun setBiometric(enabled: Boolean) = session.withActions { it.setBiometric?.invoke(enabled) }
 
-    fun setCrashlytics(enabled: Boolean) = session.withActions { it.setCrashlytics?.invoke(enabled) }
-
     fun submit() = session.withActions { it.submit?.invoke() }
 
     fun close() = session.close()
@@ -25,6 +23,5 @@ class MasterPasswordSession internal constructor(
 internal data class MasterPasswordActions(
     val setPassword: ((String) -> Unit)? = null,
     val setBiometric: ((Boolean) -> Unit)? = null,
-    val setCrashlytics: ((Boolean) -> Unit)? = null,
     val submit: (() -> Unit)? = null,
 )

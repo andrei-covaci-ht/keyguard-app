@@ -47,7 +47,7 @@ fun ApplicationExtension.configureKeyguardApplication(project: Project) {
             project.file("proguard-rules.pro"),
         )
     }
-    accountManagementFlavors(withAnalytics = true)
+    accountManagementFlavors()
 }
 
 /** Opt in without adding production signing, flavors or instrumentation policy. */
@@ -59,15 +59,12 @@ fun CommonExtension.enableCoreLibraryDesugaring(project: Project) {
     )
 }
 
-fun CommonExtension.accountManagementFlavors(withAnalytics: Boolean = false) {
+fun CommonExtension.accountManagementFlavors() {
     val accountManagementDimension = "accountManagement"
     flavorDimensions += accountManagementDimension
-    listOf("playStore" to true, "none" to false).forEach { (name, analytics) ->
+    listOf("playStore", "none").forEach { name ->
         productFlavors.maybeCreate(name).apply {
             dimension = accountManagementDimension
-            if (withAnalytics) {
-                buildConfigField("boolean", "ANALYTICS", analytics.toString())
-            }
         }
     }
 }

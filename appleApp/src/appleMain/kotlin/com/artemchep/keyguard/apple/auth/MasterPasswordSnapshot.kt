@@ -12,10 +12,9 @@ data class MasterPasswordSnapshot(
     val canSubmit: Boolean,
     val hasBiometric: Boolean,
     val biometricEnabled: Boolean,
-    val crashlyticsEnabled: Boolean,
 ) {
     companion object {
-        val empty = MasterPasswordSnapshot(false, "", null, false, false, false, false, false)
+        val empty = MasterPasswordSnapshot(false, "", null, false, false, false, false)
     }
 }
 
@@ -28,7 +27,6 @@ internal fun UnlockState?.toMasterPasswordSnapshot(busy: Boolean): MasterPasswor
         canSubmit = unlockVaultByMasterPassword != null && !busy,
         hasBiometric = false,
         biometricEnabled = false,
-        crashlyticsEnabled = false,
     )
 
 internal fun SetupState?.toMasterPasswordSnapshot(busy: Boolean): MasterPasswordSnapshot =
@@ -40,5 +38,4 @@ internal fun SetupState?.toMasterPasswordSnapshot(busy: Boolean): MasterPassword
         canSubmit = onCreateVault != null && !busy,
         hasBiometric = biometric != null,
         biometricEnabled = biometric?.checked == true,
-        crashlyticsEnabled = crashlytics.checked,
     )
