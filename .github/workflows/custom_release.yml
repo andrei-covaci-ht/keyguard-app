@@ -184,6 +184,7 @@ jobs:
       - uses: ./.github/actions/prefetch_native
         with:
           profile: desktop
+      - uses: ./.github/actions/setup_protobuf
       - name: Build unsigned Apple Silicon DMG
         run: |
           ./gradlew --no-parallel :desktopApp:createReleaseDistributable -Pkeyguard.nativeCargo.cargoOffline=true
