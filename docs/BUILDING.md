@@ -57,8 +57,8 @@ base64 < keyguard-release.keystore | tr -d '\n'
 After the four secrets are configured:
 
 ```bash
-git tag v3.7.1-20261109.2
-git push origin v3.7.1-20261109.2
+git tag v3.7.1-20261109.3
+git push origin v3.7.1-20261109.3
 ```
 
 The tag starts Linux Android/Wear jobs and one Apple Silicon macOS job. The

@@ -45,20 +45,33 @@ jobs:
           umask 077
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
-          for candidate in JKS PKCS12; do
-            check_file="$RUNNER_TEMP/signing-check-$candidate.p12"
-            if timeout 30s keytool -importkeystore -srckeystore "$key_file" \
-              -srcstoretype "$candidate" -srcstorepass:env KEYSTORE_PASSWORD \
-              -srcalias "$KEY_ALIAS" -srckeypass:env KEY_PASSWORD \
-              -destkeystore "$check_file" -deststoretype PKCS12 \
-              -deststorepass:env KEYSTORE_PASSWORD -destkeypass:env KEYSTORE_PASSWORD \
-              -destalias signing-check -noprompt >/dev/null 2>&1; then
-              echo "Validated Android signing key and store format: $candidate"
-              exit 0
-            fi
-          done
-          echo 'Android signing secret is not a readable JKS/PKCS12 keystore, or its store password, key alias, or key password is incorrect.' >&2
-          exit 1
+          magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
+          case "$magic" in
+            feedfeed) store_type=JKS ;;
+            30*) store_type=PKCS12 ;;
+            *) echo 'Decoded signing secret is not a binary JKS or PKCS12 keystore.' >&2; exit 1 ;;
+          esac
+          echo "Decoded keystore format: $store_type"
+          if ! timeout 30s keytool -list -keystore "$key_file" -storetype "$store_type" \
+            -storepass:env KEYSTORE_PASSWORD >/dev/null 2>&1; then
+            echo 'Keystore cannot be opened with ANDROID_KEYSTORE_PASSWORD, or its data is damaged.' >&2
+            exit 1
+          fi
+          if ! timeout 30s keytool -list -keystore "$key_file" -storetype "$store_type" \
+            -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" >/dev/null 2>&1; then
+            echo 'ANDROID_KEY_ALIAS does not identify an entry in this keystore.' >&2
+            exit 1
+          fi
+          if ! timeout 30s keytool -importkeystore -srckeystore "$key_file" \
+            -srcstoretype "$store_type" -srcstorepass:env KEYSTORE_PASSWORD \
+            -srcalias "$KEY_ALIAS" -srckeypass:env KEY_PASSWORD \
+            -destkeystore "$RUNNER_TEMP/signing-check.p12" -deststoretype PKCS12 \
+            -deststorepass:env KEYSTORE_PASSWORD -destkeypass:env KEYSTORE_PASSWORD \
+            -destalias signing-check -noprompt >/dev/null 2>&1; then
+            echo 'ANDROID_KEY_PASSWORD cannot unlock the private key, or the alias is not a private key entry.' >&2
+            exit 1
+          fi
+          echo 'Signing key, alias and passwords validated.'
 
   android:
     name: Release Android APK
@@ -93,15 +106,12 @@ jobs:
           umask 077
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
-          store_type=
-          for candidate in JKS PKCS12; do
-            if keytool -list -keystore "$key_file" -storetype "$candidate" \
-              -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" >/dev/null 2>&1; then
-              store_type="$candidate"
-              break
-            fi
-          done
-          test -n "$store_type"
+          magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
+          case "$magic" in
+            feedfeed) store_type=JKS ;;
+            30*) store_type=PKCS12 ;;
+            *) echo 'Invalid keystore format.' >&2; exit 1 ;;
+          esac
           for module in androidApp wearApp; do
             cp "$key_file" "$module/keyguard-release.keystore"
             {
@@ -179,15 +189,12 @@ jobs:
           umask 077
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$key_file"
-          store_type=
-          for candidate in JKS PKCS12; do
-            if keytool -list -keystore "$key_file" -storetype "$candidate" \
-              -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" >/dev/null 2>&1; then
-              store_type="$candidate"
-              break
-            fi
-          done
-          test -n "$store_type"
+          magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
+          case "$magic" in
+            feedfeed) store_type=JKS ;;
+            30*) store_type=PKCS12 ;;
+            *) echo 'Invalid keystore format.' >&2; exit 1 ;;
+          esac
           cp "$key_file" wearApp/keyguard-release.keystore
           {
             printf 'key_alias=%s\n' "$KEY_ALIAS"
