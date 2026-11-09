@@ -35,11 +35,10 @@ Create these Actions secrets; never commit the files they produce:
 - `ANDROID_KEY_PASSWORD`: release key password.
 
 The release job decodes the keystore only into the ephemeral runner filesystem.
-It accepts both direct base64 of the keystore and upstream's gzip + base64
-encoding. It then
-checks that the alias and both passwords can access the private key, and detects
-JKS or PKCS12 format. It passes that format to Gradle through the module-local
-properties files and never uploads signing files.
+It accepts direct base64, upstream's gzip + base64, and an additional base64
+encoding layer. It then detects JKS or PKCS12 and checks that the alias and both
+passwords can access the private key. It passes that format to Gradle through
+the module-local properties files and never uploads signing files.
 
 Create the keystore once, offline, and keep a backup. Do not run this from CI:
 
@@ -59,8 +58,8 @@ base64 < keyguard-release.keystore | tr -d '\n'
 After the four secrets are configured:
 
 ```bash
-git tag v3.7.1-20261109.4
-git push origin v3.7.1-20261109.4
+git tag v3.7.1-20261109.5
+git push origin v3.7.1-20261109.5
 ```
 
 The tag starts Linux Android/Wear jobs and one Apple Silicon macOS job. The

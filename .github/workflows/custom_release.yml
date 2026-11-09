@@ -28,6 +28,10 @@ jobs:
     permissions:
       contents: read
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref }}
+          persist-credentials: false
       - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654
         with:
           distribution: temurin
@@ -43,22 +47,8 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
           umask 077
-          encoded_file="$RUNNER_TEMP/keyguard-release.payload"
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$encoded_file"
-          container_magic=$(od -An -tx1 -N2 "$encoded_file" | tr -d ' \n')
-          if [ "$container_magic" = 1f8b ]; then
-            gzip -dc "$encoded_file" > "$key_file"
-            echo 'Signing secret uses upstream gzip + base64 encoding.'
-          else
-            mv "$encoded_file" "$key_file"
-          fi
-          magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
-          case "$magic" in
-            feedfeed) store_type=JKS ;;
-            30*) store_type=PKCS12 ;;
-            *) echo 'Decoded signing secret is not a binary JKS or PKCS12 keystore.' >&2; exit 1 ;;
-          esac
+          store_type=$(bash scripts/decode_release_keystore.sh "$key_file")
           echo "Decoded keystore format: $store_type"
           if ! timeout 30s keytool -list -keystore "$key_file" -storetype "$store_type" \
             -storepass:env KEYSTORE_PASSWORD >/dev/null 2>&1; then
@@ -112,21 +102,8 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
           umask 077
-          encoded_file="$RUNNER_TEMP/keyguard-release.payload"
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$encoded_file"
-          container_magic=$(od -An -tx1 -N2 "$encoded_file" | tr -d ' \n')
-          if [ "$container_magic" = 1f8b ]; then
-            gzip -dc "$encoded_file" > "$key_file"
-          else
-            mv "$encoded_file" "$key_file"
-          fi
-          magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
-          case "$magic" in
-            feedfeed) store_type=JKS ;;
-            30*) store_type=PKCS12 ;;
-            *) echo 'Invalid keystore format.' >&2; exit 1 ;;
-          esac
+          store_type=$(bash scripts/decode_release_keystore.sh "$key_file")
           for module in androidApp wearApp; do
             cp "$key_file" "$module/keyguard-release.keystore"
             {
@@ -202,21 +179,8 @@ jobs:
           set -euo pipefail
           test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
           umask 077
-          encoded_file="$RUNNER_TEMP/keyguard-release.payload"
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$encoded_file"
-          container_magic=$(od -An -tx1 -N2 "$encoded_file" | tr -d ' \n')
-          if [ "$container_magic" = 1f8b ]; then
-            gzip -dc "$encoded_file" > "$key_file"
-          else
-            mv "$encoded_file" "$key_file"
-          fi
-          magic=$(od -An -tx1 -N4 "$key_file" | tr -d ' \n')
-          case "$magic" in
-            feedfeed) store_type=JKS ;;
-            30*) store_type=PKCS12 ;;
-            *) echo 'Invalid keystore format.' >&2; exit 1 ;;
-          esac
+          store_type=$(bash scripts/decode_release_keystore.sh "$key_file")
           cp "$key_file" wearApp/keyguard-release.keystore
           {
             printf 'key_alias=%s\n' "$KEY_ALIAS"
