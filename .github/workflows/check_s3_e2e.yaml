@@ -10,7 +10,7 @@ on:
         type: boolean
   push:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - '.github/actions/setup_gradle/**'
       - '.github/actions/setup_rust/**'
@@ -32,7 +32,7 @@ on:
       - 'util/xml/**'
   pull_request:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - '.github/actions/setup_gradle/**'
       - '.github/actions/setup_rust/**'

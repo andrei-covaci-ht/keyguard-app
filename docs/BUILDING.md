@@ -19,6 +19,14 @@ unsigned/not notarized. Gatekeeper may require opening it explicitly or removing
 the quarantine attribute. Developer ID signing and notarization can be added
 later without changing the package task.
 
+The upstream test, native, lint, and integration workflows remain available
+through `workflow_dispatch`. Their branch filters are set to the dedicated
+`codex-manual-only` branch, so they do not run on normal development pushes or
+pull requests. Gradle wrapper validation and the targeted website check remain
+automatic. F-Droid, Homebrew, and Scoop deployment workflows are manual-only,
+so publishing this custom GitHub Release will not start external publishing
+jobs. The old multi-platform upstream release workflow is also manual-only.
+
 ## Required repository secrets
 
 Create these Actions secrets; never commit the files they produce:

@@ -10,7 +10,7 @@ on:
         type: boolean
   push:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - ".github/actions/setup_gradle/**"
       - ".github/actions/setup_python/**"
@@ -30,7 +30,7 @@ on:
       - "util/kdbx/**"
   pull_request:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - ".github/actions/setup_gradle/**"
       - ".github/actions/setup_python/**"

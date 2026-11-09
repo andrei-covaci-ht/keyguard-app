@@ -10,7 +10,7 @@ on:
         type: boolean
   push:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - 'commonGpgAgent/**'
       - 'commonAgent/**'
@@ -42,7 +42,7 @@ on:
       - '.github/workflows/check_gpg.yaml'
   pull_request:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - 'commonGpgAgent/**'
       - 'commonAgent/**'

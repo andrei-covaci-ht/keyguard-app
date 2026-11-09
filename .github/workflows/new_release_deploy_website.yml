@@ -1,9 +1,6 @@
 name: "🎉 Release tag -> Deploy website"
 
 on:
-  push:
-    tags:
-      - 'r*'
   workflow_dispatch:
 
 permissions:

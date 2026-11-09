@@ -19,11 +19,11 @@ on:
         required: false
         default: false
         type: boolean
-  # Always produce the aggregate check, even when no native paths changed.
+  # Native platform matrix is available manually; regular CI uses custom_ci.yml.
   push:
-    branches: [master]
+    branches: [codex-manual-only]
   pull_request:
-    branches: [master]
+    branches: [codex-manual-only]
 
 permissions:
   contents: read

@@ -10,7 +10,7 @@ on:
         type: boolean
   push:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - 'commonSshAgent/**'
       - 'commonAgent/**'
@@ -35,7 +35,7 @@ on:
       - '.github/workflows/check_ssh.yaml'
   pull_request:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - 'commonSshAgent/**'
       - 'commonAgent/**'

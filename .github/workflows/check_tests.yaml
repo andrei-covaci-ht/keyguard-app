@@ -12,7 +12,7 @@ on:
   # manifests, Apple-only sources, unrelated CI files and bot-updated data.
   push:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - '**'
       - '!**/*.md'
@@ -52,7 +52,7 @@ on:
       - '.github/workflows/check_tests.yaml'
   pull_request:
     branches:
-      - master
+      - codex-manual-only
     paths:
       - '**'
       - '!**/*.md'
