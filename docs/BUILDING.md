@@ -27,7 +27,9 @@ GitHub Release does not start external deployment jobs.
 
 ## Required repository secrets
 
-Create these Actions secrets; never commit the files they produce:
+Create these repository-level Actions secrets under GitHub Settings → Secrets and
+variables → Actions. Environment secrets are not exposed to these jobs. Never
+commit the files they produce:
 
 - `ANDROID_KEYSTORE_BASE64`: base64 contents of the persistent release keystore.
 - `ANDROID_KEYSTORE_PASSWORD`: keystore/store password.
@@ -58,8 +60,8 @@ base64 < keyguard-release.keystore | tr -d '\n'
 After the four secrets are configured:
 
 ```bash
-git tag v3.7.1-20261109.5
-git push origin v3.7.1-20261109.5
+git tag v3.7.1-YYYYMMDD.N
+git push origin v3.7.1-YYYYMMDD.N
 ```
 
 The tag starts Linux Android/Wear jobs and one Apple Silicon macOS job. The

@@ -45,7 +45,10 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
+          : "${KEYSTORE_B64:?ANDROID_KEYSTORE_BASE64 is missing}"
+          : "${KEYSTORE_PASSWORD:?ANDROID_KEYSTORE_PASSWORD is missing}"
+          : "${KEY_ALIAS:?ANDROID_KEY_ALIAS is missing}"
+          : "${KEY_PASSWORD:?ANDROID_KEY_PASSWORD is missing}"
           umask 077
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
           store_type=$(bash scripts/decode_release_keystore.sh "$key_file")
@@ -100,7 +103,10 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
+          : "${KEYSTORE_B64:?ANDROID_KEYSTORE_BASE64 is missing}"
+          : "${KEYSTORE_PASSWORD:?ANDROID_KEYSTORE_PASSWORD is missing}"
+          : "${KEY_ALIAS:?ANDROID_KEY_ALIAS is missing}"
+          : "${KEY_PASSWORD:?ANDROID_KEY_PASSWORD is missing}"
           umask 077
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
           store_type=$(bash scripts/decode_release_keystore.sh "$key_file")
@@ -119,8 +125,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          apk=androidApp/build/outputs/apk/none/release/*.apk
-          python3 scripts/verify_native_bundle.py android $apk
+          shopt -s nullglob
+          apks=(androidApp/build/outputs/apk/none/release/*.apk)
+          test "${#apks[@]}" -eq 1
+          apk="${apks[0]}"
+          python3 scripts/verify_native_bundle.py android "$apk"
           ./gradlew --no-parallel :androidApp:dependencies --configuration noneReleaseRuntimeClasspath > "$RUNNER_TEMP/android-dependencies.txt"
           if grep -Eqi 'firebase-(analytics|crashlytics)|com\.google\.firebase:firebase-(analytics|crashlytics)' "$RUNNER_TEMP/android-dependencies.txt"; then
             echo 'Firebase Analytics/Crashlytics found in the Android runtime dependency graph.' >&2
@@ -177,7 +186,10 @@ jobs:
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "$KEYSTORE_B64" && test -n "$KEYSTORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
+          : "${KEYSTORE_B64:?ANDROID_KEYSTORE_BASE64 is missing}"
+          : "${KEYSTORE_PASSWORD:?ANDROID_KEYSTORE_PASSWORD is missing}"
+          : "${KEY_ALIAS:?ANDROID_KEY_ALIAS is missing}"
+          : "${KEY_PASSWORD:?ANDROID_KEY_PASSWORD is missing}"
           umask 077
           key_file="$RUNNER_TEMP/keyguard-release.keystore"
           store_type=$(bash scripts/decode_release_keystore.sh "$key_file")
@@ -194,8 +206,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          apk=wearApp/build/outputs/apk/none/release/*.apk
-          python3 scripts/verify_native_bundle.py android $apk
+          shopt -s nullglob
+          apks=(wearApp/build/outputs/apk/none/release/*.apk)
+          test "${#apks[@]}" -eq 1
+          apk="${apks[0]}"
+          python3 scripts/verify_native_bundle.py android "$apk"
           ./gradlew --no-parallel :wearApp:dependencies --configuration noneReleaseRuntimeClasspath > "$RUNNER_TEMP/wear-dependencies.txt"
           if grep -Eqi 'firebase-(analytics|crashlytics)|com\.google\.firebase:firebase-(analytics|crashlytics)' "$RUNNER_TEMP/wear-dependencies.txt"; then
             echo 'Firebase Analytics/Crashlytics found in the Wear runtime dependency graph.' >&2
@@ -278,7 +293,7 @@ jobs:
 
   publish:
     name: Publish GitHub Release
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-24.04
     needs: [android, wear, macos]
     permissions:
       contents: write
@@ -294,5 +309,6 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
         run: gh release create "$RELEASE_TAG" release-assets/* --title "$RELEASE_TAG" --generate-notes
